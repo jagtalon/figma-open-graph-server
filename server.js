@@ -1,5 +1,5 @@
 const http = require('http');
-const openGraphScraper = require("open-graph-scraper");
+const crawler = require("open-graph-scraper");
 
 http.createServer((request, response) => {
     const { headers, method, url } = request;
@@ -18,6 +18,7 @@ http.createServer((request, response) => {
       // Make sure to return a JSON response.
       response.statusCode = 200;
       response.setHeader('Content-Type', 'application/json');
+      response.setHeader('Access-Control-Allow-Origin', '*');
   
       // Remove the slash from the URL.
       let cleanUrl = url.replace(/^\//, '');
@@ -28,7 +29,7 @@ http.createServer((request, response) => {
       };
       
       // Scrape the page and retrieve the Open Graph data.
-      openGraphScraper(options)
+      crawler(options)
         .then((data) => {
             const { result } = data;
             response.end(JSON.stringify(result));
