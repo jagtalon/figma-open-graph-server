@@ -1,5 +1,6 @@
 const http = require('http');
 const crawler = require("open-graph-scraper");
+let webCache = {};
 
 http.createServer((request, response) => {
   const { url } = request;
@@ -22,8 +23,6 @@ http.createServer((request, response) => {
     });
 }).listen(8080);
 
-let webCache = {};
-
 // Crawl the page and retrieve the Open Graph data.
 function fetchOpenGraph(response, url) {
   const options = {
@@ -31,6 +30,8 @@ function fetchOpenGraph(response, url) {
     url: url
   };
 
+  // See if we already have a cached version.
+  // Otherwise, we crawl the website.
   if (webCache[url]) {
     console.log(`Cache hit on ${url}`);
     response.end(webCache[url]);
