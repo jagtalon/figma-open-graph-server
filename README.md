@@ -1,2 +1,2 @@
-# figma-open-graph-server
-The server component for figma-open-graph
+# Figma Open Graph Server
+The server component for https://github.com/jagtalon/figma-open-graph
