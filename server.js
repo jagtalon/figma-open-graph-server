@@ -22,6 +22,8 @@ http.createServer((request, response) => {
     });
 }).listen(8080);
 
+let webCache = {};
+
 // Crawl the page and retrieve the Open Graph data.
 function fetchOpenGraph(response, url) {
   const options = {
@@ -29,13 +31,20 @@ function fetchOpenGraph(response, url) {
     url: url
   };
 
-  crawler(options)
-    .then((data) => {
-        const { result } = data;
-        response.end(JSON.stringify(result));
-    }).catch((error) => {
-        response.end(JSON.stringify(error));
-    });
+  if (webCache[url]) {
+    console.log(`Cache hit on ${url}`);
+    response.end(webCache[url]);
+  } else {
+    crawler(options)
+      .then((data) => {
+          const { result } = data;
+          console.log(`Caching ${url}`);
+          webCache[url] = JSON.stringify(result)
+          response.end(webCache[url]);
+      }).catch((error) => {
+          response.end(JSON.stringify(error));
+      });
+  }
 }
 
 function errorReporting(err) {
