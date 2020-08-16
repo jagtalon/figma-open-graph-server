@@ -1,4 +1,4 @@
-var HTMLParser = require('node-html-parser');
+const HTMLParser = require('node-html-parser');
 
 addEventListener('fetch', event => {
   event.respondWith(handleRequest(event.request))
@@ -21,12 +21,17 @@ async function handleRequest(request) {
     }
   }
 
-  const scrapeResponse = await fetch('http://example.com/', requestInit)
-  const scrapeResult = await gatherResponse(scrapeResponse)
+  try {
+    const scrapeResponse = await fetch('http://example.com/', requestInit)
+    const scrapeResult = await gatherResponse(scrapeResponse)
 
-  var root = HTMLParser.parse(scrapeResult);
+    const root = HTMLParser.parse(scrapeResult)
+    let metaTags = root.querySelectorAll('meta')
 
-  return new Response(JSON.stringify({result: root}), responseInit)
+    return new Response(JSON.stringify({result: []}), responseInit)
+  } catch (err) {
+    return new Response(JSON.stringify({error: err.stack}), responseInit)
+  }
 }
 
 // This is from Cloudflare's example:
