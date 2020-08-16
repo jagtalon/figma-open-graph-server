@@ -1,15 +1,16 @@
 {
+  "private": true,
   "name": "figma-open-graph-server",
   "version": "1.0.0",
-  "description": "Scrapes the Open Graph meta tags",
-  "main": "scraper.js",
-  "dependencies": {
-    "open-graph-scraper": "^4.1.1"
-  },
-  "devDependencies": {},
+  "description": "Provides the server component for figma-open-graph.",
+  "main": "index.js",
   "scripts": {
-    "start": "node server.js"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "format": "prettier --write '**/*.{js,css,json,md}'"
   },
   "author": "Jag Talon",
-  "license": "ISC"
+  "license": "MIT",
+  "devDependencies": {
+    "prettier": "^1.18.2"
+  }
 }
