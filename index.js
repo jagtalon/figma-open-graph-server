@@ -6,7 +6,16 @@ addEventListener('fetch', event => {
  * @param {Request} request
  */
 async function handleRequest(request) {
-  return new Response('Hello worker!', {
-    headers: { 'content-type': 'text/plain' },
-  })
+  let response
+
+  if (request.method === 'GET') {
+    response = new Response(JSON.stringify({response: 'Hello worker!'}), {
+      headers: { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+       },
+    })
+  }
+
+  return response
 }
