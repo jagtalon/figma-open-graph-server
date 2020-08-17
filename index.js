@@ -22,13 +22,34 @@ async function handleRequest(request) {
   }
 
   try {
-    const scrapeResponse = await fetch('http://example.com/', requestInit)
+    const scrapeResponse = await fetch('https://www.nytimes.com/wirecutter/', requestInit)
     const scrapeResult = await gatherResponse(scrapeResponse)
 
     const root = HTMLParser.parse(scrapeResult)
-    let metaTags = root.querySelectorAll('meta')
 
-    return new Response(JSON.stringify({result: []}), responseInit)
+    // Get <meta> tags with `property` attributes.
+    let metaTags = root.querySelectorAll('meta')
+    let filteredMetaTags = metaTags.filter(e => {
+
+      // Make sure that both `propery` and `content` attributes are set.
+      let prop = e.getAttribute('property')
+      let content = e.getAttribute('content')
+
+      if (typeof prop !== 'undefined' && typeof content !== 'undefined') {
+        return true
+      } else {
+        return false
+      }
+    })
+
+    // Only get the attributes that we want.
+    metaTags = filteredMetaTags.map(e => {
+      return { prop: e.getAttribute('property'), content: e.getAttribute('content')}
+    })
+
+    console.log(metaTags)
+
+    return new Response(JSON.stringify({result: metaTags}), responseInit)
   } catch (err) {
     return new Response(JSON.stringify({error: err.stack}), responseInit)
   }
