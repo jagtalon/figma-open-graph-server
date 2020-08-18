@@ -28,8 +28,9 @@ async function handleRequest(request) {
     const root = HTMLParser.parse(scrapeResult)
 
     // Get <meta> tags with `property` attributes.
+    // <meta property="..." content="...">
     let metaTags = root.querySelectorAll('meta')
-    let filteredMetaTags = metaTags.filter(e => {
+    metaTags = metaTags.filter(e => {
 
       // Make sure that both `propery` and `content` attributes are set.
       let prop = e.getAttribute('property')
@@ -38,9 +39,9 @@ async function handleRequest(request) {
       return (typeof prop !== 'undefined') && (typeof content !== 'undefined')
     })
 
-    // Only get the attributes that we want.
-    metaTags = filteredMetaTags.map(e => {
-      return { prop: e.getAttribute('property'), content: e.getAttribute('content')}
+    // Create an object with the attributes that we want.
+    metaTags = metaTags.map(e => {
+      return { 'property': e.getAttribute('property'), 'content': e.getAttribute('content')}
     })
 
     return new Response(JSON.stringify({result: metaTags}), responseInit)
