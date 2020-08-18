@@ -35,19 +35,13 @@ async function handleRequest(request) {
       let prop = e.getAttribute('property')
       let content = e.getAttribute('content')
 
-      if (typeof prop !== 'undefined' && typeof content !== 'undefined') {
-        return true
-      } else {
-        return false
-      }
+      return (typeof prop !== 'undefined') && (typeof content !== 'undefined')
     })
 
     // Only get the attributes that we want.
     metaTags = filteredMetaTags.map(e => {
       return { prop: e.getAttribute('property'), content: e.getAttribute('content')}
     })
-
-    console.log(metaTags)
 
     return new Response(JSON.stringify({result: metaTags}), responseInit)
   } catch (err) {
