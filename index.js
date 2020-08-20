@@ -1,18 +1,18 @@
-import {getUrlParam, scrapeMetaTags, gatherResponse} from './helpers.js'
+import { getUrlParam, scrapeMetaTags, gatherResponse } from './helpers.js'
 
 // Headers used to respond to the Figma plugin.
 const responseInit = {
-  headers: { 
+  headers: {
     'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*'
+    'Access-Control-Allow-Origin': '*',
   },
 }
 
 // Headers used to scrape a website.
 const requestInit = {
   headers: {
-    'User-Agent': 'Figma Open Graph Plugin 1.0'
-  }
+    'User-Agent': 'Figma Open Graph Plugin 1.0',
+  },
 }
 
 // This is the main function that will handle all the requests to this worker.
@@ -28,17 +28,23 @@ async function handleRequest(request) {
     // <meta property="..." content="...">
     if (scrapeResult.type === 'text') {
       let metaTags = scrapeMetaTags(scrapeResult.result)
-      return new Response(JSON.stringify({result: metaTags}), responseInit)
+      return new Response(JSON.stringify({ result: metaTags }), responseInit)
 
-    // If it's an image, convert the binary to a base64-encoded string.
+      // If it's an image, convert the binary to a base64-encoded string.
     } else {
-      return new Response(JSON.stringify({
-        result: `data:${scrapeResult.type};base64,${scrapeResult.result}`, 
-        type: scrapeResult.type
-      }), responseInit)
+      return new Response(
+        JSON.stringify({
+          result: `data:${scrapeResult.type};base64,${scrapeResult.result}`,
+          type: scrapeResult.type,
+        }),
+        responseInit,
+      )
     }
   } catch (err) {
-    return new Response(JSON.stringify({error: 'Failed to fetch URL', message: err.stack}), responseInit)
+    return new Response(
+      JSON.stringify({ error: 'Failed to fetch URL', message: err.stack }),
+      responseInit,
+    )
   }
 }
 
