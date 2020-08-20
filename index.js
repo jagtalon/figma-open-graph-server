@@ -1,34 +1,34 @@
 const HTMLParser = require('node-html-parser');
 
+// Headers used to respond to the Figma plugin.
+const responseInit = {
+  headers: { 
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*'
+    },
+}
+
+// Headers used to scrape a website.
+const requestInit = {
+  headers: {
+    'User-Agent': 'Figma Open Graph Plugin 1.0'
+  }
+}
+  
 async function handleRequest(request) {
-  // Headers used to respond to the Figma plugin.
-  const responseInit = {
-    headers: { 
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*'
-     },
-  }
-
-  // Headers used to scrape a website.
-  const requestInit = {
-    headers: {
-      'User-Agent': 'Figma Open Graph Plugin 1.0'
-    }
-  }
-
   // Get the URL from the `url` param.
   let url = getUrlParam(request)
 
-  // Fetch the HTML from the URL.
+  // Fetch the HTML or image in the URL.
   try {
     const scrapeResponse = await fetch(url, requestInit)
     const scrapeResult = await gatherResponse(scrapeResponse)
 
+    // If it's HTML, get <meta> tags with `property` attributes.
+    // <meta property="..." content="...">
     if (scrapeResult.type === 'text') {
       const root = HTMLParser.parse(scrapeResult.result)
 
-      // Get <meta> tags with `property` attributes.
-      // <meta property="..." content="...">
       let metaTags = root.querySelectorAll('meta')
 
       // Create an object with the attributes that we want.
@@ -45,6 +45,7 @@ async function handleRequest(request) {
 
       return new Response(JSON.stringify({result: metaTags}), responseInit)
     } else {
+      // If it's an image, convert the binary to a base64-encoded string.
       return new Response(JSON.stringify({result: `data:${scrapeResult.type};base64,${scrapeResult.result}`, type: scrapeResult.type}), responseInit)
     }
   } catch (err) {
@@ -63,22 +64,12 @@ async function gatherResponse(response) {
       type: 'text', 
       result: JSON.stringify(await response.json())
     }
-  } else if (contentType.includes('application/text')) {
-    return {
-      type: 'text', 
-      result: await response.text()
-    }
-  } else if (contentType.includes('text/html')) {
-    return {
-      type: 'text', 
-      result: await response.text()
-    }
   } else if (contentType.includes('image')) {
     let arrayBuffer = await response.arrayBuffer()
 
     return {
       type: contentType, 
-      result: btoa(new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), ''))
+      result: imageToBase64(arrayBuffer)
     }
   } else {
     return {
@@ -97,6 +88,13 @@ function getUrlParam(request) {
   if (url && !url.match(/^[a-zA-Z]+:\/\//)) url = 'http://' + url
 
   return url
+}
+
+// Convert image binary to base64-encoded string.
+// This is from StackOverflow:
+// https://stackoverflow.com/questions/9267899/arraybuffer-to-base64-encoded-string
+function imageToBase64(arrayBuffer) {
+  return btoa(new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), ''))
 }
 
 addEventListener('fetch', event => {
