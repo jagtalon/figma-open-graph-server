@@ -12,8 +12,7 @@ async function handleRequest(request) {
   // Headers used to scrape a website.
   const requestInit = {
     headers: {
-      'User-Agent': 'Figma Open Graph Plugin 1.0',
-      'Accept': 'text/html;charset=UTF-8'
+      'User-Agent': 'Figma Open Graph Plugin 1.0'
     }
   }
 
@@ -25,25 +24,29 @@ async function handleRequest(request) {
     const scrapeResponse = await fetch(url, requestInit)
     const scrapeResult = await gatherResponse(scrapeResponse)
 
-    const root = HTMLParser.parse(scrapeResult)
+    if (scrapeResult.type === 'text') {
+      const root = HTMLParser.parse(scrapeResult.result)
 
-    // Get <meta> tags with `property` attributes.
-    // <meta property="..." content="...">
-    let metaTags = root.querySelectorAll('meta')
+      // Get <meta> tags with `property` attributes.
+      // <meta property="..." content="...">
+      let metaTags = root.querySelectorAll('meta')
 
-    // Create an object with the attributes that we want.
-    metaTags = metaTags.reduce((result, item) => {
-      let prop = item.getAttribute('property')
-      let content = item.getAttribute('content')
+      // Create an object with the attributes that we want.
+      metaTags = metaTags.reduce((result, item) => {
+        let prop = item.getAttribute('property')
+        let content = item.getAttribute('content')
 
-      if ((typeof prop !== 'undefined') && (typeof content !== 'undefined')) {
-        result[prop] = content
-      }
+        if ((typeof prop !== 'undefined') && (typeof content !== 'undefined')) {
+          result[prop] = content
+        }
 
-      return result
-    }, {})
+        return result
+      }, {})
 
-    return new Response(JSON.stringify({result: metaTags}), responseInit)
+      return new Response(JSON.stringify({result: metaTags}), responseInit)
+    } else {
+      return new Response(JSON.stringify({result: `data:${scrapeResult.type};base64,${scrapeResult.result}`, type: scrapeResult.type}), responseInit)
+    }
   } catch (err) {
     return new Response(JSON.stringify({error: 'Failed to fetch URL', message: err.stack}), responseInit)
   }
@@ -56,13 +59,32 @@ async function gatherResponse(response) {
   const contentType = headers.get('content-type') || ''
 
   if (contentType.includes('application/json')) {
-    return JSON.stringify(await response.json())
+    return {
+      type: 'text', 
+      result: JSON.stringify(await response.json())
+    }
   } else if (contentType.includes('application/text')) {
-    return await response.text()
+    return {
+      type: 'text', 
+      result: await response.text()
+    }
   } else if (contentType.includes('text/html')) {
-    return await response.text()
+    return {
+      type: 'text', 
+      result: await response.text()
+    }
+  } else if (contentType.includes('image')) {
+    let arrayBuffer = await response.arrayBuffer()
+
+    return {
+      type: contentType, 
+      result: btoa(new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), ''))
+    }
   } else {
-    return await response.text()
+    return {
+      type: 'text', 
+      result: await response.text()
+    }
   }
 }
 
