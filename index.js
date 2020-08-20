@@ -1,9 +1,5 @@
 const HTMLParser = require('node-html-parser');
 
-addEventListener('fetch', event => {
-  event.respondWith(handleRequest(event.request))
-})
-
 async function handleRequest(request) {
   // Headers used to respond to the Figma plugin.
   const responseInit = {
@@ -21,8 +17,12 @@ async function handleRequest(request) {
     }
   }
 
+  // Get the URL from the `url` param.
+  let url = getUrlParam(request)
+
+  // Fetch the HTML from the URL.
   try {
-    const scrapeResponse = await fetch('https://www.nytimes.com/wirecutter/', requestInit)
+    const scrapeResponse = await fetch(url, requestInit)
     const scrapeResult = await gatherResponse(scrapeResponse)
 
     const root = HTMLParser.parse(scrapeResult)
@@ -30,23 +30,22 @@ async function handleRequest(request) {
     // Get <meta> tags with `property` attributes.
     // <meta property="..." content="...">
     let metaTags = root.querySelectorAll('meta')
-    metaTags = metaTags.filter(e => {
-
-      // Make sure that both `propery` and `content` attributes are set.
-      let prop = e.getAttribute('property')
-      let content = e.getAttribute('content')
-
-      return (typeof prop !== 'undefined') && (typeof content !== 'undefined')
-    })
 
     // Create an object with the attributes that we want.
-    metaTags = metaTags.map(e => {
-      return { 'property': e.getAttribute('property'), 'content': e.getAttribute('content')}
-    })
+    metaTags = metaTags.reduce((result, item) => {
+      let prop = item.getAttribute('property')
+      let content = item.getAttribute('content')
+
+      if ((typeof prop !== 'undefined') && (typeof content !== 'undefined')) {
+        result[prop] = content
+      }
+
+      return result
+    }, {})
 
     return new Response(JSON.stringify({result: metaTags}), responseInit)
   } catch (err) {
-    return new Response(JSON.stringify({error: err.stack}), responseInit)
+    return new Response(JSON.stringify({error: 'Failed to fetch URL', message: err.stack}), responseInit)
   }
 }
 
@@ -66,3 +65,18 @@ async function gatherResponse(response) {
     return await response.text()
   }
 }
+
+// Get URL through the `url` parameter.
+// This is from web.scraper.workers.dev example:
+// https://github.com/adamschwartz/web.scraper.workers.dev/blob/995e0fd351bf349955724d403658be9a40c0bf18/index.js#L28
+function getUrlParam(request) {
+  const searchParams = new URL(request.url).searchParams
+  let url = searchParams.get('url')
+  if (url && !url.match(/^[a-zA-Z]+:\/\//)) url = 'http://' + url
+
+  return url
+}
+
+addEventListener('fetch', event => {
+  event.respondWith(handleRequest(event.request))
+})
